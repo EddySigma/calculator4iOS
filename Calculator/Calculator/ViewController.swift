@@ -124,7 +124,4 @@ class ViewController: UIViewController {
             // this is set false because if the value in displayValue is set we no longer need to display it
         }
     }
-    
-    
-    // ==-- ==-- ==-- ==-- ==-- ==-- ==-- ==-- video at 56:55 --== --== --== --== --== --== --== --== //
 }
