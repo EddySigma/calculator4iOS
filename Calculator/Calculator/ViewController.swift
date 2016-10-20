@@ -136,7 +136,6 @@ class ViewController: UIViewController {
         // the value that corresponds to the variable is calculated before it is set.
         get {
             // here we compute the value
-            print(display.text!)
             return (NSNumberFormatter().numberFromString(display.text! as String)!.doubleValue)
         }
         set {

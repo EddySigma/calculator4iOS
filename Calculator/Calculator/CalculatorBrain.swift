@@ -20,7 +20,8 @@ import Foundation
 class CalculatorBrain {
     // data structure
     // op could be an operand or operation
-    private enum Op {
+    private enum Op: CustomStringConvertible {  // Printable was replaced by CustomStringConvertible -> also this implements a protocol
+                                                // meaning that what is in that protocol has been made here as well... explained later
         // no inheritance
         // only computed properties
         // good for whend something needs to be one thing one time and another at another time (never both)
@@ -29,6 +30,24 @@ class CalculatorBrain {
         case BinaryOperation(String, (Double, Double) -> Double)
         // swift has the capability to assossiate data with the cases in the enum
         // api: application programming interface -> methods and properties that make up your class
+        
+        // computed property to print the data in this Op
+        var description: String {   // this allows the array to be printed one item at a time (since our array is made up of Op objects
+            get{                    // we have to specify how to print these Op objects using a switch
+                switch self {
+                case .Operand (let operand):
+                    return "\(operand)" // here we only return the number
+                case .UnaryOperation (let symbol, _): // we do not care about anything other than the string (string contains +, ÷, × etc)
+                    return symbol       // returning the op -> operation symbol
+                case .BinaryOperation (let symbol, _):
+                    return symbol       // same as above...
+                }
+            }
+            // set {
+            //      removing this section makes the property a read only property
+            // }
+        }
+        
     }
     
     // var opStack = Array<Op>() // simple and clear, not prefered
@@ -40,16 +59,32 @@ class CalculatorBrain {
     
     // my first initializer -> aka constructor
     init() {
-//        knownOps["×"] = Op.BinaryOperation("×", { $0 * $1 })
+        // you are allowed to make functions inside functions especialy if they are just used inside their respective functions
+        func learnOp( op: Op) {  // this function will help fix the problem of repeating symbols in the following few lines
+                                // exa: knownOps["×"] = Op.BinaryOperation("×", * )
+            knownOps[op.description] = op // this line makes so the description is set to whatever is put in the function learn op
+        }
         
-        knownOps["×"] = Op.BinaryOperation("×", * ) // just like in square root this is a function that takes parameters and returns double (in this case two doubles)
-        // the reason both division and subtraction do not work like multiplication and addition is because the order of the values matters in this cases and it is necesary to specify
-        knownOps["÷"] = Op.BinaryOperation("÷", { $1 / $0 })
-        knownOps["+"] = Op.BinaryOperation("+", + )
-        knownOps["−"] = Op.BinaryOperation("−", { $1 - $0 })
+        // the following replaces the old code bellow it (commented out)
         
-//        knownOps["√"] = Op.UnaryOperation("√", { sqrt($0) }) // this line is not the best way to do it
-        knownOps["√"] = Op.UnaryOperation("√", sqrt) // because this is a function that takes a value and returns a value (just like we want)
+        // binary
+        learnOp( Op.BinaryOperation("×", * ) )
+        learnOp( Op.BinaryOperation("÷", { $1 / $0 }) )
+        learnOp( Op.BinaryOperation("+", + ) )
+        learnOp( Op.BinaryOperation("−", { $1 - $0 }) )
+        
+        // unary
+        learnOp( Op.UnaryOperation("√", sqrt) )
+        
+        ////        knownOps["×"] = Op.BinaryOperation("×", { $0 * $1 })
+        //        knownOps["×"] = Op.BinaryOperation("×", * ) // just like in square root this is a function that takes parameters and returns double (in this case two doubles)
+        //        // the reason both division and subtraction do not work like multiplication and addition is because the order of the values matters in this cases and it is necesary to specify
+        //        knownOps["÷"] = Op.BinaryOperation("÷", { $1 / $0 })
+        //        knownOps["+"] = Op.BinaryOperation("+", + )
+        //        knownOps["−"] = Op.BinaryOperation("−", { $1 - $0 })
+        //        
+        ////        knownOps["√"] = Op.UnaryOperation("√", { sqrt($0) }) // this line is not the best way to do it
+        //        knownOps["√"] = Op.UnaryOperation("√", sqrt) // because this is a function that takes a value and returns a value (just like we want)
     }
     
     
@@ -123,7 +158,7 @@ class CalculatorBrain {
         // note: see that the remainder can be replaced by _ as we do not do anything with it, but it could be useful... dont know
         // for now it will be replaced. If needed then reenter the name remainder for it
         
-        print ("\(opStack)")
+        print("\(opStack) = \(result) with \(remainder) left over")
         
         return result
     }
