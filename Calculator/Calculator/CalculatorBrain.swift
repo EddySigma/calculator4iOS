@@ -152,11 +152,9 @@ class CalculatorBrain {
             // 3rd -> 4 x ( + )      stack: (5, 6)         (plus ("+" note: the parentesis are for human help, the program did not make those) is found and we make a recursive call to find the operands needed, this time for addition)
             // 4th -> 4 x ( 5 + )    stack: (6)            (five is found, then the next number is needed for the addition)
             // 5th -> 4 x ( 5 + 6 )  stack: ()             (six is found, the addition can be computed, thus returning the operand needed for mutiplication. Which in turn returns the outcome of that number and four)
-        let (result, _) = evaluate(opStack)
+        let (result, remainder) = evaluate(opStack)
         // the line above makes a call to the other function that will take care of all the work previously described and the outcome
         // will be stored in the tuple (result, remainder)
-        // note: see that the remainder can be replaced by _ as we do not do anything with it, but it could be useful... dont know
-        // for now it will be replaced. If needed then reenter the name remainder for it
         
         print("\(opStack) = \(result) with \(remainder) left over")
         
