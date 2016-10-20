@@ -12,7 +12,7 @@
 // public if making framework that someone will use
 // private -> only accesible by this object
 
-// --==--== --==--== --==--== --==--== --==--== --==--== --==--== Stopped video @ 39:48 ==--==-- ==--==-- ==--==-- ==--==-- ==--==-- ==--==-- ==--==-- //
+// --==--== --==--== --==--== --==--== --==--== --==--== --==--== Stopped video 3 @ 1:06:10 ==--==-- ==--==-- ==--==-- ==--==-- ==--==-- ==--==-- ==--==-- // also opStack is displaying junk
 
 
 import Foundation
@@ -25,7 +25,7 @@ class CalculatorBrain {
         // only computed properties
         // good for whend something needs to be one thing one time and another at another time (never both)
         case Operand(Double)
-        case UnaryOperation(String, Double -> Double) // takes a string an a function that takes a double and returns a double
+        case UnaryOperation(String, Double -> Double) // takes a string and a function that takes a double and returns a double
         case BinaryOperation(String, (Double, Double) -> Double)
         // swift has the capability to assossiate data with the cases in the enum
         // api: application programming interface -> methods and properties that make up your class
@@ -56,20 +56,56 @@ class CalculatorBrain {
     // arrays and dictionarys are not classes, and classes are pass by value. Arrays and dictionarys are strucs (structures almost the same as classes)
     // diff between strucs and classes are classes inherit, structs are passed by value.  Note: even doubles and ints are structs.
     
+    // in the following evaluate there is an implicit let for ops making it read only -> cant make changes to it
+        // changing the implicit let into a var will make it so that the copy will be mutable but it still is a copy
     // unnamed tuple ->(Double!, [Op]) // this still works in the following, but adding names is very helpfull
-    func evaluate(ops: [Op]) -> (result: Double!, remainingOps: [Op]) { // tuple with names -> good for readability.
+    private func evaluate( ops: [Op]) -> (result: Double?, remainingOps: [Op]) { // tuple with names -> good for readability.
         // tuple, make like a pseudo object -> (kind of a list in here) // can be more than two items
         // tuple can be used for return
         
         if !ops.isEmpty { // check that the stack is not empty
+            var remainingOps = ops // this makes it a copy (use of =) // also a copy is not really made until needed
             // let op = ops.removeLast() -> error: can' remove last from an immutable object
-            let op = ops.removeLast()
+            // let op = ops.removeLast() // thanks to the changes made to ops on the function header and the remainingOps variable
+            let op = remainingOps.removeLast() // added note all arguments have the hiden let
+            
+            switch op {
+            case .Operand(let operand): // here let can be replaced with var, but almost always you dont want that.
+                // .Operand refers to Op.Operand -> this is how enums are handled
+                // ( in here ) asks for what you want to do with the associated value that you get for handling this case
+                //      where the enum Op is operand...
+                // let the associated value be assigned to operand -> statement in parentesis   (let operand)
+                
+                return (operand, remainingOps)
+                // the statement above returns the current operand and the remaining items in the stack
+            case .UnaryOperation(_, let operation): // in this case the first item is the symbol and we do not case for it,this item
+                                                    // (the expected string) will be replaced by _ which means ignore, in the other
+                                                    // hand we do care about the math operation, thus we store it in operation
+                let operandEvaluation = evaluate(remainingOps) // recursively make a call to check the rest of the items in the stack
+                if let operand = operandEvaluation.result {// line above is a tuple and here we only want the outcome... store as operand
+                // the operand above is an optional double -> also the if let ... allows operand to be double (or checks that it is one)
+                    return (operation(operand), operandEvaluation.remainingOps)
+                    // the above returns the operand and the items leftover in the stack after the recursion
+                }
+            case .BinaryOperation(_, let operation): // again we do not care about the first part
+                // in here we will do the same as in the unaryoperation case but twice instead because there are two items checked from
+                // the stack instead of one.
+                let op1Evaluation = evaluate(remainingOps) // recurse once
+                if let operand1 = op1Evaluation.result {    // make the outcome of the previus a double
+                    let op2Evaluation = evaluate(op1Evaluation.remainingOps) // recurse again for the next item in the stack
+                    if let operand2 = op2Evaluation.result { // also make it a double
+                        return(  operation(operand1, operand2), op2Evaluation.remainingOps)
+                        // in the line above we return the operation containing the two operands found and the remaining of the stack
+                    }
+                }
+            // default: breack -> this line is not necesary because all the possible cases have been taken care of :)
+            }
         }
         return (nil, ops) // failure or default -> can't be evaluated
         
     }
     
-    func evaluate() -> Op { // return optional -> can't evaluate things like "+" alone... this is important, may need to return a nil in this situation
+    func evaluate() -> Double? { // return optional -> can't evaluate things like "+" alone... this is important, may need to return a nil in this situation
         // advise -> recursion ahead...
         
         
@@ -81,20 +117,29 @@ class CalculatorBrain {
             // 3rd -> 4 x ( + )      stack: (5, 6)         (plus ("+" note: the parentesis are for human help, the program did not make those) is found and we make a recursive call to find the operands needed, this time for addition)
             // 4th -> 4 x ( 5 + )    stack: (6)            (five is found, then the next number is needed for the addition)
             // 5th -> 4 x ( 5 + 6 )  stack: ()             (six is found, the addition can be computed, thus returning the operand needed for mutiplication. Which in turn returns the outcome of that number and four)
+        let (result, _) = evaluate(opStack)
+        // the line above makes a call to the other function that will take care of all the work previously described and the outcome
+        // will be stored in the tuple (result, remainder)
+        // note: see that the remainder can be replaced by _ as we do not do anything with it, but it could be useful... dont know
+        // for now it will be replaced. If needed then reenter the name remainder for it
         
+        print ("\(opStack)")
         
+        return result
     }
     
     
-    func pushOperand(operand: Double){ // public
+    func pushOperand(operand: Double) -> Double? { // public
         // making an enum: Op.Operand(operand)
         opStack.append(Op.Operand(operand))
+        return evaluate() // every time you push an operand it will return the evaluation
     }
     
-    func performOperation(symbol: String) { // public
+    func performOperation(symbol: String) -> Double? { // public
         // the brackets in the following line are the way that we search things in a dictionary
         if let operation = knownOps[symbol] { // the reason this is an optional op (Op?) is because you may be searching for something that is not there -> thus nil will be returned
             opStack.append(operation) // if it can be found in known operations add it to the opStack
         }
+        return evaluate()
     }
 }
